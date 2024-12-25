@@ -1,6 +1,7 @@
 # LF Fixer
 
-View the LF stats of files in your repository.
+- View the line ending stats.
+- Normalize line endings.
 
 ## Installation
 
@@ -16,7 +17,7 @@ lf_fixer --help
 
 ## TODO
 
-- Edit files to fix line ending mismatches
-    - To user defined line ending,
-    - To the line ending of the majority of the files
-- Add tests
+- [x] Edit files to fix line ending mismatches
+    - [x] To user defined line ending,
+    - [x] To the line ending of the majority of the files
+- [] Add tests

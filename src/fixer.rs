@@ -22,16 +22,16 @@ impl Fixer {
     }
 
     pub(crate) fn fix(&mut self) {
-        let file = File::options().read(true).write(true).open(&self.file_name);
+        let file = File::options().read(true).open(&self.file_name);
         if file.is_err() {
             println!("Could not open file: {}", self.file_name);
             return;
         }
 
         let mut file = file.unwrap();
-        let mut buf = Vec::new();
-        let mut write_buf = Vec::new();
-        let bytes_read = file.read_to_end(&mut buf);
+        let mut read_buf = Vec::with_capacity(1024 * 1024);
+        let mut write_buf = Vec::with_capacity(1024 * 1024);
+        let bytes_read = file.read_to_end(&mut read_buf);
 
         if bytes_read.is_err() {
             println!("Could not read file: {}", self.file_name);
@@ -39,44 +39,66 @@ impl Fixer {
         }
 
         let bytes_read = bytes_read.unwrap();
-        let mut next_read_head = 0;
+        let mut read_head: usize = 0;
+        let mut write_head: usize = 0;
 
         loop {
-            if next_read_head == bytes_read {
+            if read_head == bytes_read {
                 break;
             }
 
-            next_read_head = match buf[next_read_head] {
+            let byte = read_buf[read_head];
+            read_head = match byte {
                 b'\r' => {
+                    self.normalize_ending(&mut write_buf, &mut write_head);
+                    let lf_index = read_head + 1;
                     // LL(1) to see if the next byte is '\n'
-                    if next_read_head < bytes_read && buf[next_read_head] == b'\n' {
-                        write_buf.extend(&self.to);
-                        next_read_head + 2
+                    if lf_index < bytes_read && read_buf[lf_index] == b'\n' {
+                        lf_index + 1
                     } else {
-                        next_read_head + 1
+                        read_head + 1
                     }
                 }
                 b'\n' => {
-                    write_buf.extend(&self.to);
-                    next_read_head + 1
+                    self.normalize_ending(&mut write_buf, &mut write_head);
+                    read_head + 1
                 }
-                any_other_byte => {
-                    write_buf.push(any_other_byte);
-                    next_read_head + 1
+                _ => {
+                    write_buf.push(byte);
+                    write_head = write_head + 1;
+                    read_head + 1
                 }
             }
         }
 
-        let seeked = file.seek(SeekFrom::Start(0));
-        if seeked.is_err() {
-            println!("Could not seek to start of file: {}", self.file_name);
+        drop(file);
+
+        let file = File::options()
+            .write(true)
+            .truncate(true)
+            .open(&self.file_name);
+        if file.is_err() {
+            println!("Could not open file: {}", self.file_name);
+            return;
+        }
+        let mut file = file.unwrap();
+        let written = file.write_all(&write_buf[0..write_head]);
+        if written.is_err() {
+            println!(
+                "Could not write to file: {} {:?}",
+                self.file_name,
+                written.err()
+            );
             return;
         }
 
-        let written = file.write_all(&write_buf);
-        if written.is_err() {
-            println!("Could not write to file: {}", self.file_name);
-            println!("Error: {:?}", written.err());
+        println!("Fixed line endings in file: {}", self.file_name);
+    }
+
+    fn normalize_ending(&self, write_buf: &mut Vec<u8>, write_head: &mut usize) {
+        for &b in &self.to {
+            write_buf.push(b);
+            *write_head += 1;
         }
     }
 }
