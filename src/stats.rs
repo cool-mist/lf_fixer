@@ -24,6 +24,7 @@ impl FileStatsAggregate {
             lines: 0,
         }
     }
+
     pub(crate) fn fold(mut accumulator: FileStatsAggregate, stat: FileStats) -> FileStatsAggregate {
         accumulator.crlf += stat.crlf;
         accumulator.cr += stat.cr;
@@ -43,6 +44,10 @@ impl FileStatsAggregate {
         accumulator.stats.push(stat);
 
         accumulator
+    }
+
+    pub(crate) fn max(&self) -> Option<LineSep> {
+        self.max.clone()
     }
 
     pub(crate) fn print_table(&self) {
@@ -164,7 +169,7 @@ impl FileStats {
 }
 
 #[derive(Clone)]
-enum LineSep {
+pub(crate) enum LineSep {
     Lf,
     CrLf,
     Cr,

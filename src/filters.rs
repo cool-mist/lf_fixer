@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub(crate) enum FileFilter {
     None,
     Extension(ExtensionFilter),
@@ -16,6 +17,7 @@ impl FileFilter {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct ExtensionFilter {
     ext: String,
 }
