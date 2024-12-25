@@ -20,4 +20,4 @@ lf_fixer --help
 - [x] Edit files to fix line ending mismatches
     - [x] To user defined line ending,
     - [x] To the line ending of the majority of the files
-- [] Add tests
+- [ ] Add tests
